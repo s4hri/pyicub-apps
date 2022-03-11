@@ -34,10 +34,18 @@ from pyicub.helper import iCub
 # initialize icub
 icub = iCub()
 
-#`moving: looking left-right
-## angles: azimuth - elevetion - vergence
-icub.gaze.lookAtAbsAngles(-15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles( 15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles(-15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles( 15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles(  0.0,  0.0, 2.0, waitMotionDone=True)
+icub.gaze.lookAtAbsAngles(-15.0, -0.5, 2.0)
+icub.gaze.lookAtAbsAngles( 15.0, -0.5, 2.0)
+icub.gaze.lookAtAbsAngles(-15.0, -0.5, 2.0, timeout=1.0)
+icub.gaze.lookAtAbsAngles( 15.0, -0.5, 2.0, timeout=1.0)
+icub.gaze.lookAtAbsAngles( 0.0, 0.0, 0.0)
+
+icub.gaze.blockNeck()
+icub.gaze.lookAtAbsAngles(-15.0, -0.5, 2.0)
+icub.gaze.lookAtAbsAngles( 15.0, -0.5, 2.0)
+
+icub.gaze.clearNeck()
+icub.gaze.lookAtFixationPoint(-1, 0.0, 0.0)
+icub.gaze.lookAtFixationPoint(-2, 0.0, 0.0, waitMotionDone=False)
+icub.gaze.lookAtFixationPoint(-5, 0.0, 0.0)
+
