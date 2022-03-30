@@ -3,9 +3,6 @@
 # Copyright (c) 2022, Social Cognition in Human-Robot Interaction,
 #                     Istituto Italiano di Tecnologia, Genova
 #
-#                     Nicola Severino Russi (nicola.russi@iit.it)
-#                     Davide De Tommaso (davide.detommaso@iit.it)
-#
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,13 +28,6 @@
 
 from pyicub.helper import iCub
 
-# initialize icub
 icub = iCub()
-
-#`moving: looking left-right
-## angles: azimuth - elevetion - vergence
-icub.gaze.lookAtAbsAngles(-15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles( 15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles(-15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles( 15.0, -0.5, 2.0, waitMotionDone=True)
-icub.gaze.lookAtAbsAngles(  0.0,  0.0, 2.0, waitMotionDone=True)
+action = icub.createAction(JSON_file="json/lookat.json")
+icub.play(action)
