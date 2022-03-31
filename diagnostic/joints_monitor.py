@@ -41,9 +41,9 @@ class RFM_Plotter(yarp.RFModule):
         self._scope_     = None
         self._closing_   = False
         self.OUTPUT_DIR  = "/tmp/scope/"
-        self._file_name_ = self.OUTPUT_DIR + self._posCtrl_.__robot_part__.name + ".xml"
+        self._file_name_ = self.OUTPUT_DIR + self._posCtrl_.__part_name__ + ".xml"
 
-    def configure(self, rf):
+    def configure(self, rf, robot_name):
         self._logger_.debug("Configure module ...")
         # check - resource finder
         #
@@ -66,7 +66,7 @@ class RFM_Plotter(yarp.RFModule):
         self._port_r_vel_.open(self._remote_ + "/ref_vel:o")
         self._port_r_acc_.open(self._remote_ + "/ref_acc:o")
 
-        self.getScopeXMLFilename()
+        self.getScopeXMLFilename(robot_name)
 
         return True
 
@@ -127,7 +127,7 @@ class RFM_Plotter(yarp.RFModule):
         return True
 
 
-    def getScopeXMLFilename(self):
+    def getScopeXMLFilename(self, robot_name):
         self._logger_ = YarpLogger.getLogger()
         self._logger_.debug("generating ScopeXml ...")
 
@@ -157,10 +157,10 @@ class RFM_Plotter(yarp.RFModule):
                 _min = min_p[0] - 10
                 _max = max_p[0] + 10
                 plot = ET.SubElement(portscope, "plot", gridx=str(j), gridy=str(i), hspan="1", vspan="1", title="Joint %s" % (index), minval=str(_min), maxval=str(_max), bgcolor="LightSlateGrey")
-                ET.SubElement(plot, "graph", remote="/" + self._posCtrl_.__robot__ + "/" + self._posCtrl_.__robot_part__.name + "/pos:o"    , index = str(index), color="Blue"  , size="3", type="lines")
-                ET.SubElement(plot, "graph", remote="/" + self._posCtrl_.__robot__ + "/" + self._posCtrl_.__robot_part__.name + "/vel:o"    , index = str(index), color="Red"   , size="1", type="lines")
-                ET.SubElement(plot, "graph", remote="/" + self._posCtrl_.__robot__ + "/" + self._posCtrl_.__robot_part__.name + "/acc:o"    , index = str(index), color="Orange", size="1", type="lines")
-                ET.SubElement(plot, "graph", remote="/" + self._posCtrl_.__robot__ + "/" + self._posCtrl_.__robot_part__.name + "/ref_pos:o", index = str(index), color="Green" , size="3", type="lines")
+                ET.SubElement(plot, "graph", remote="/" + robot_name + "/" + self._posCtrl_.__part_name__ + "/pos:o"    , index = str(index), color="Blue"  , size="3", type="lines")
+                ET.SubElement(plot, "graph", remote="/" + robot_name + "/" + self._posCtrl_.__part_name__ + "/vel:o"    , index = str(index), color="Red"   , size="1", type="lines")
+                ET.SubElement(plot, "graph", remote="/" + robot_name + "/" + self._posCtrl_.__part_name__ + "/acc:o"    , index = str(index), color="Orange", size="1", type="lines")
+                ET.SubElement(plot, "graph", remote="/" + robot_name + "/" + self._posCtrl_.__part_name__ + "/ref_pos:o", index = str(index), color="Green" , size="3", type="lines")
                 index += 1
 
         tree = minidom.parseString(ET.tostring(portscope)).toprettyxml(indent='\t')
@@ -235,10 +235,10 @@ if __name__ == '__main__':
 
     for part in sys.argv[1:]:
         if part in icub.parts.keys():
-            positionCtrl = icub.getPositionController(icub.parts[part])
+            positionCtrl = icub.getPositionController(part)
             if positionCtrl:
                 plotter = RFM_Plotter(icub.robot_name, part, positionCtrl)
-                plotter.configure(None)
+                plotter.configure(None, icub.robot_name)
                 plotters.append(plotter)
 
     with ThreadPoolExecutor(max_workers=10) as executor:
