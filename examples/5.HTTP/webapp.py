@@ -26,7 +26,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from pyicub.helper import iCub, JointPose, JointsTrajectoryCheckpoint, LimbMotion, ICUB_PARTS, iCubFullbodyAction
+from pyicub.helper import iCub, JointPose, JointsTrajectoryCheckpoint, LimbMotion, ICUB_PARTS
 
 class WebApp:
 
@@ -40,9 +40,10 @@ class WebApp:
         example_motion.addCheckpoint(down)
         example_motion.addCheckpoint(home)
 
-        self.action = iCubFullbodyAction()
-        step = self.action.addStep()
+        self.action = self.icub.createAction()
+        step = self.icub.createStep()
         step.setLimbMotion(example_motion)
+        self.action.addStep(step)
 
         self.icub.http_manager.register(target=self.foo, rule_prefix="mywebapp")
 
@@ -50,5 +51,4 @@ class WebApp:
         self.icub.play(self.action)
         return value
 
-a = WebApp()
-input()
+WebApp()

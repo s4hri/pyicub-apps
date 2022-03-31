@@ -30,3 +30,4 @@ from pyicub.helper import iCub
 
 icub = iCub()
 icub.gaze.lookAtFixationPoint(-1.0, -0.5, 1.0)
+icub.gaze.lookAtAbsAngles(0.0, 0.0, 0.0)

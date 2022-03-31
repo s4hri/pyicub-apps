@@ -31,5 +31,3 @@ from pyicub.helper import iCub
 
 icub = iCub()
 icub.speech.say("Hi, I'm iCub! Let's go to have some fun")
-input()
-print("done")

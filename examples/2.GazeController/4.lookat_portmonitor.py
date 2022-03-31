@@ -26,10 +26,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import yarp
 from pyicub.helper import iCub
-
-yarp.Network.init()
 
 DOWN = [0.0, -15.0, 3.0]
 ZERO = [0.0, 0.0, 3.0]

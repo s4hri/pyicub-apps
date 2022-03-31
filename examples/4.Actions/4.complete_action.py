@@ -37,11 +37,11 @@ def my_action():
     up = JointsTrajectoryCheckpoint(arm_up, duration=1.0)
     down = JointsTrajectoryCheckpoint(arm_down, duration=1.0)
     
-    m1 = LimbMotion('right_arm')
+    m1 = LimbMotion(ICUB_PARTS.RIGHT_ARM)
     m1.addCheckpoint(up)
     m1.addCheckpoint(down)
     
-    m2 = LimbMotion('left_arm')
+    m2 = LimbMotion(ICUB_PARTS.LEFT_ARM)
     m2.addCheckpoint(up)
     m2.addCheckpoint(down)
     
