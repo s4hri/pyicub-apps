@@ -1,5 +1,6 @@
 import yarp
-from pyicub.core.ports import BufferedReadPort
+from pyicub.core.ports import BufferedReadPort, BufferedPort
+from pyicub.core.logger import YarpLogger
 from threading import Thread
 from random import randint
 
@@ -7,25 +8,22 @@ from random import randint
 class Reader:
     def __init__(self):
         self.port = BufferedReadPort("/reader:i", "/writer:o", callback=self.detectMsg)
+        self.log  = YarpLogger.getLogger()
     
     def detectMsg(self, bot):
-        msg  = "READER receiving : " + bot.toString()
-        yarp.Log("",0,"").debug(msg)
+        self.log.debug("READER receiving : " + bot.toString())
         return True
 
 
 class Writer:
     def __init__(self):
-        self.port = yarp.BufferedPortBottle()
+        self.port = BufferedPort()
         self.port.open("/writer:o")
     
     def sendMsg (self, top):
         for i in range (1, top):
-            bot = self.port.prepare()
-            bot.clear()
-            bot.addString("item ")
-            bot.addInt32(i)
-            self.port.write()
+            msg = "item " + str(i)
+            self.port.write(msg)
             yarp.delay(randint(1,5))
 
 
@@ -33,16 +31,17 @@ class Writer:
 if __name__ == '__main__':
 
     yarp.Network.init()
-
+    log = YarpLogger.getLogger()
+    
     writer = Writer()
-    yarp.Log("",0,"").debug("init WRITER")
+    log.debug("init WRITER")
     reader = Reader()
-    yarp.Log("",0,"").debug("init READER")
+    log.debug("init READER")
 
-    yarp.Log("",0,"").debug("start writing")
+    log.debug("start writing")
     writing = Thread(target=writer.sendMsg(10))
     writing.start()
     writing.join()
-    yarp.Log("",0,"").debug("end writing")
+    log.debug("end writing")
 
     yarp.Network.fini()
