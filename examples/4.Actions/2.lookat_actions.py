@@ -52,7 +52,7 @@ def my_action():
 
     return action
 
-action = my_action()
-icub.play(action)
-action.exportJSONFile('json/lookat.json')
+a = my_action()
+icub.play(a)
+a.exportJSONFile('json/lookat.json')
 

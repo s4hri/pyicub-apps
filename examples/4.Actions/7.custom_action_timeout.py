@@ -26,24 +26,25 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from pyicub.helper import iCub, JointPose, ICUB_PARTS
+hamlet="""
+To be, or not to be, that is the question:
+Whether 'tis nobler in the mind to suffer
+The slings and arrows of outrageous fortune,
+Or to take arms against a sea of troubles
+And by opposing end them. To die—to sleep
+...
+"""
+
+
+from pyicub.helper import iCub, PyiCubCustomCall
 
 icub = iCub()
-head_ctrl = icub.getPositionController(ICUB_PARTS.HEAD)
-torso_ctrl = icub.getPositionController(ICUB_PARTS.TORSO)
 
-head_up = JointPose(target_joints=[20.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-head_home = JointPose(target_joints=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+speak = PyiCubCustomCall(target="speech.say", args=(hamlet,), timeout=5.0)
 
-torso_down = JointPose(target_joints=[0.0, 0.0, 20.0])
-torso_home = JointPose(target_joints=[0.0, 0.0, 0.0])
+action = icub.createAction()
+step = icub.createStep()
+step.addCustomCall(speak)
+action.addStep(step)
 
-head_ctrl.move(head_up, waitMotionDone=False)
-torso_ctrl.move(torso_down, waitMotionDone=False)
-
-head_ctrl.waitMotionDone(timeout=10.0)
-torso_ctrl.waitMotionDone(timeout=10.0)
-
-head_ctrl.move(head_home)
-torso_ctrl.move(torso_home)
-
+icub.play(action)

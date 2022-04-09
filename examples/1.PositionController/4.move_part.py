@@ -26,8 +26,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import time
-from pyicub.helper import iCub, JointPose, LimbMotion, JointsTrajectoryCheckpoint
+from pyicub.helper import iCub, JointPose, LimbMotion, JointsTrajectoryCheckpoint, ICUB_PARTS
 
 up = JointsTrajectoryCheckpoint(JointPose(target_joints=[20.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
 down = JointsTrajectoryCheckpoint(JointPose(target_joints=[-20.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
@@ -35,7 +34,7 @@ home = JointsTrajectoryCheckpoint(JointPose(target_joints=[0.0, 0.0, 0.0, 0.0, 0
 
 icub = iCub()
 
-motion = LimbMotion('head')
+motion = LimbMotion(ICUB_PARTS.HEAD)
 motion.addCheckpoint(up)
 motion.addCheckpoint(down)
 motion.addCheckpoint(home)
