@@ -27,18 +27,17 @@
         <parameters>--device opencv_grabber</parameters>
         <node>$ENV{ICUBSRV_HOST}</node>
     </module>
-    
+
 	<module>
         <name>yarpview</name>
         <parameters>--name /face --out /click --x 0 --y 0 --p 50 --w 320 --h 240</parameters>
         <node>$ENV{ICUBSRV_HOST}</node>
     </module>
-    
-    
-  	<connection>
-  	  	<from>/icubSim/cam/right</from>
-  	  	<to>/face</to>
-  	  	<protocol>udp</protocol>
-  	</connection>
+
+    <module>
+        <name>faceLandmarks</name>
+        <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
 
 </application>

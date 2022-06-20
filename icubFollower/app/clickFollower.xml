@@ -1,11 +1,18 @@
 <application>
 
-        <name>Click Follower</name>
-        
-        <module>
-                <name>python3</name>
-                <parameters>$ENV{PYICUB_APPS_PATH}/icubFollower/src/clickFollower.py</parameters>
-                <node>$ENV{ICUBSRV_HOST}</node>
-        </module>
+    <name>Click Follower</name>
+    
+    <module>
+        <name>python3</name>
+        <parameters>$ENV{PYICUB_APPS_PATH}/icubFollower/src/clickFollower.py</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+
+
+  	<connection>
+  	  	<from>/icubSim/cam/right</from>
+  	  	<to>/face</to>
+  	  	<protocol>udp</protocol>
+  	</connection>
 
 </application>
