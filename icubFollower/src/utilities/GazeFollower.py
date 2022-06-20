@@ -3,7 +3,8 @@ from threading import Lock
 import yarp
 from pyicub.core.logger import YarpLogger
 from pyicub.core.ports import BufferedReadPort
-from utilities.RobotCam import RobotCam, getRobotName
+from utilities.RobotCam import RobotCam
+from utilities.common import getGazeController, getRobotName
 
 ## ===== UTILITES METHODS =====
 
