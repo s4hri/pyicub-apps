@@ -69,8 +69,6 @@ class gazeFollower(yarp.RFModule):
         resizedPixel = yarp.Vector(2)
         resizedPixel.set(0, pixel[0]/(resolution[0]/X_ICUB))
         resizedPixel.set(1, pixel[1]/(resolution[1]/Y_ICUB))
-
-        print("@@@@@@@@ resizedPixel: ", resizedPixel.toString())
         return resizedPixel
 
     ## CUSTOMS METHODS
@@ -87,7 +85,6 @@ class gazeFollower(yarp.RFModule):
     def callback(self, bot):
         pixelTarget  = self.getPixelTarget(bot)
         resizedPixel = self.__resizePixel__(pixelTarget, self.resolution)
-        print("pixelTarget: ", pixelTarget.toString()," resoltion: ", self.resolution, " resizedPixel: ", resizedPixel.toString())
         self.lookAtMonoPixel(resizedPixel)
     
     @abstractmethod
