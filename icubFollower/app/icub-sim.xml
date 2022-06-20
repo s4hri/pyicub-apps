@@ -1,0 +1,44 @@
+<application>
+
+    <name>iCub Simulation</name>
+
+    <module>
+        <name>yarplogger</name>
+        <parameters>--start --no_stop</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+
+    <module>
+        <name>iCub_SIM</name>
+        <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+    
+	<module>
+        <name>iKinGazeCtrl</name>
+        <parameters>--from configSim.ini</parameters>
+        <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+    
+	<module>
+        <name>yarpdev</name>
+        <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+        <parameters>--device opencv_grabber</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+    
+	<module>
+        <name>yarpview</name>
+        <parameters>--name /face --out /click --x 0 --y 0 --p 50 --w 320 --h 240</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+    
+    
+  	<connection>
+  	  	<from>/icubSim/cam/right</from>
+  	  	<to>/face</to>
+  	  	<protocol>udp</protocol>
+  	</connection>
+
+</application>

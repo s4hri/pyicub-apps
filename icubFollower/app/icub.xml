@@ -1,0 +1,57 @@
+<application>
+  	<name>iCub</name>
+
+  	<authors>
+  	  	<author email="davide.detommaso@iit.it">Davide De Tommaso</author>
+  	</authors>
+	
+  	<module>
+  	  	<name>yarplogger</name>
+  	  	<parameters>--start --no_stop</parameters>
+  	  	<node>$ENV{ICUBSRV_HOST}</node>
+  	</module>
+	
+  	<module>
+  	  	<name>yarprobotinterface</name>
+  	  	<node>$ENV{ICUB_HOST}</node>
+  	</module>
+	
+  	<module>
+  	  	<name>yarpdev</name>
+  	  	<parameters> --from camera/dragonfly2_config_right.ini</parameters>
+  	  	<node>$ENV{ICUB_HOST}</node>
+  	</module>
+
+  	<module>
+  	  	<name>camCalib</name>
+  	  	<parameters>--context cameraCalibration --from icubEyes.ini --group CAMERA_CALIBRATION_RIGHT --name /icub/camcalib/right</parameters>
+  	  	<node>$ENV{ICUBSRV_HOST}</node>
+  	</module>
+
+  	<module>
+  	  	<name>yarpview</name>
+  	  	<parameters>--name /face  --out /click --x 0 --y 0 --p 50 --w 320 --h 240</parameters>
+  	  	<node>$ENV{ICUBSRV_HOST}</node>
+  	</module>
+
+  	<module>
+  	  	<name>iKinGazeCtrl</name>
+  	  	<parameters>--from config.ini --head_version 2.5 --saccades off --imu::mode off --eye_tilt::max 5 --eye_tilt::min -5 --torso off</parameters>
+  	  	<node>$ENV{ICUBSRV_HOST}</node>
+  	</module>
+
+
+  	<connection>
+  	  	<from>/icub/cam/right</from>
+  	  	<to>/icub/camcalib/right/in</to>
+  	  	<protocol>udp</protocol>
+  	</connection>
+
+  	<connection>
+  	  	<from>/icub/camcalib/right/out</from>
+  	  	<to>/face</to>
+  	  	<protocol>udp</protocol>
+  	</connection>
+
+	
+</application>
