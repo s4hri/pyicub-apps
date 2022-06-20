@@ -3,7 +3,7 @@ from threading import Lock
 import yarp
 from pyicub.core.logger import YarpLogger
 from pyicub.core.ports import BufferedReadPort
-from icubFollower.src.utilities.RobotCam import RobotCam, getRobotName
+from utilities.RobotCam import RobotCam, getRobotName
 
 ## ===== UTILITES METHODS =====
 

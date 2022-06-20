@@ -9,7 +9,7 @@
 import yarp
 import sys
 from pyicub.core.logger import YarpLogger
-from icubFollower.src.utilities.GazeFollower import gazeFollower
+from utilities.GazeFollower import gazeFollower
 
 
 class clickFollower(gazeFollower):
