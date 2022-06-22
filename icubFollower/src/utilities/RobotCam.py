@@ -19,9 +19,10 @@ class RobotCam:
     def __getPortName__(self, robotName, side, log):
         res = None
         if robotName == "icubSim":
-           res = "/"+robotName+"/cam/"+side
+            res = "/grabber"
+            #res = "/"+robotName+"/cam/"+side
         elif robotName == "icub":
-           res = "/"+robotName+"/camcalib/"+side+"/out"
+            res = "/"+robotName+"/camcalib/"+side+"/out"
         log.info("Port Name: " + res)
         return res
         

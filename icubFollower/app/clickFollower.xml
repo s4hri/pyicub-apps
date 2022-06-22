@@ -8,11 +8,4 @@
         <node>$ENV{ICUBSRV_HOST}</node>
     </module>
 
-
-  	<connection>
-  	  	<from>/icubSim/cam/right</from>
-  	  	<to>/face</to>
-  	  	<protocol>udp</protocol>
-  	</connection>
-
 </application>

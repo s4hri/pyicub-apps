@@ -8,23 +8,4 @@
         <node>$ENV{ICUBSRV_HOST}</node>
     </module>
 
-
-    <connection>
-        <from>/grabber</from>
-        <to>/faceLandmarks/image:i</to>
-        <protocol>udp</protocol>
-    </connection>
-
-	<connection>
-        <from>/faceLandmarks/image:o</from>
-        <to>/icubSim/texture/screen</to>
-        <protocol>udp</protocol>
-    </connection>
-
-  	<connection>
-  	  	<from>/icubSim/cam/right</from>
-  	  	<to>/face</to>
-  	  	<protocol>udp</protocol>
-  	</connection>
-
 </application>
