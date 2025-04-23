@@ -1,0 +1,11 @@
+<application>
+
+    <name>iFaceDetector</name>
+    
+    <module>
+        <name>python3</name>
+        <parameters>/home/icub/pyicub-apps/faceDetector/app.py</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+
+</application>
