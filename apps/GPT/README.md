@@ -15,7 +15,6 @@ A YARP module to interface with Azure OpenAI LLMs via Azure GPT deployments, wit
 ## Features
 
 - Built for Azure OpenAI (`AzureOpenAI` client)
-- Supports `gpt-4.5-preview` and `gpt-4o-audio-preview` (fully configurable)
 - YARP RPC interface for full control
 - Streaming enabled by default
 - Session management: create, reset, delete, switch
@@ -151,19 +150,5 @@ You can:
 | `/GPT/text:i`    | `yarp.Bottle` | Input text queries to GPT (plain text).      |
 | `/GPT/text:o`    | `yarp.Bottle` | Output GPT responses (plain text).           |
 | `/GPT/rpc:i`     | `yarp.Port`   | RPC port to send control commands.           |
-
----
-
-## Future Extensions
-
-- Whisper (speech-to-text) module
-- TTS (text-to-speech) module
-- Full iCub cognitive loop integration
-
----
-
-## License
-
-MIT License — free to use & extend.
 
 ---

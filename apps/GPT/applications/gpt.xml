@@ -8,4 +8,10 @@
         <node>$ENV{ICUBSRV_HOST}</node>
     </module>
 
+    <connection>
+		<from>/GPT/text:o</from>
+		<to>/iSpeak</to>
+		<protocol>tcp</protocol>
+	</connection>
+
 </application>

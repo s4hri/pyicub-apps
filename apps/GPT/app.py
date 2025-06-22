@@ -1,3 +1,34 @@
+"""
+BSD 2-Clause License
+
+Copyright (c) 2025, Social Cognition in Human-Robot Interaction,
+                    Istituto Italiano di Tecnologia, Genova
+
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+"""
 
 import yarp
 import sys
@@ -5,11 +36,15 @@ import json
 import os
 from openai import AzureOpenAI
 from openai import APIConnectionError, RateLimitError, Timeout, APIError
+from pyicub.core.logger import YarpLogger
 
 
 class GPT(yarp.RFModule):
 
     def configure(self, rf):
+        self.logs = YarpLogger.getLogger()
+        self.logs.info("[GPT] Starting configuration...")
+
         self.period = 0.1
         self.sessions_file = "sessions.json"
         self.total_tokens_used = 0
@@ -18,7 +53,7 @@ class GPT(yarp.RFModule):
 
         self.config_path = rf.check("config", yarp.Value("")).asString()
         if not self.config_path:
-            print("[ERROR] Missing config file path")
+            self.logs.error("[GPT] Missing config file path")
             return False
 
         if not self._load_config():
@@ -34,7 +69,7 @@ class GPT(yarp.RFModule):
                 api_version=self.config['api_version']
             )
         except Exception as e:
-            print(f"[ERROR] AzureOpenAI init failed: {e}")
+            self.logs.error(f"[GPT] AzureOpenAI init failed: {e}")
             return False
 
         self.sessions = {}
@@ -48,6 +83,7 @@ class GPT(yarp.RFModule):
         self.query_via_rpc = False
         self.text_via_rpc = ""
 
+        self.logs.info("[GPT] Configuration complete.")
         return True
 
     def _setup_ports(self):
@@ -72,7 +108,7 @@ class GPT(yarp.RFModule):
             self.max_tokens = self.config.get('max_length', 1024)
             return True
         except Exception as e:
-            print(f"[ERROR] Failed to load config: {e}")
+            self.logs.error(f"[GPT] Failed to load config: {e}")
             return False
 
     def _load_system_prompt(self):
@@ -81,11 +117,11 @@ class GPT(yarp.RFModule):
                 with open(self.prompt_path, 'r') as f:
                     self.system_prompt = f.read().strip()
             except Exception as e:
-                print(f"[ERROR] Failed to read prompt file: {e}")
+                self.logs.warning(f"[GPT] Failed to read prompt file: {e}")
                 self.system_prompt = "You are a helpful assistant."
         else:
             self.system_prompt = self.config.get('system_prompt', "You are a helpful assistant.")
-        print(f"[INFO] System prompt loaded:\n{self.system_prompt}")
+        self.logs.info(f"[GPT] System prompt: {self.system_prompt}")
 
     def _create_session(self, session_id):
         self.sessions[session_id] = [{"role": "system", "content": self.system_prompt}]
@@ -100,14 +136,11 @@ class GPT(yarp.RFModule):
 
     def _save_sessions_to_file(self):
         try:
-            data = {
-                "sessions": self.sessions,
-                "token_usage": self.token_usage
-            }
+            data = {"sessions": self.sessions, "token_usage": self.token_usage}
             with open(self.sessions_file, 'w') as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            print(f"[ERROR] Failed to save sessions: {e}")
+            self.logs.error(f"[GPT] Failed to save sessions: {e}")
 
     def _load_sessions_from_file(self):
         if not os.path.isfile(self.sessions_file):
@@ -120,7 +153,7 @@ class GPT(yarp.RFModule):
             if self.active_session not in self.sessions:
                 self._create_session(self.active_session)
         except Exception as e:
-            print(f"[ERROR] Failed to load sessions: {e}")
+            self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
 
     def _query_llm(self, messages):
         try:
@@ -131,11 +164,11 @@ class GPT(yarp.RFModule):
                 max_tokens=self.max_tokens,
                 messages=messages,
                 timeout=30,
-                stream=True
+                stream=False
             )
             return response
         except (APIConnectionError, Timeout, RateLimitError, APIError) as e:
-            print(f"[ERROR] API request failed: {e}")
+            self.logs.error(f"[GPT] API request failed: {e}")
             return None
 
     def answer_ChatGPT(self, text_input):
@@ -143,8 +176,7 @@ class GPT(yarp.RFModule):
             return "[WARNING] Empty input"
 
         self.status = 'generating'
-        print(f" ({self.active_session}) Human: {text_input}")
-
+        self.logs.info(f"[GPT:{self.active_session}] User: {text_input}")
         self.sessions[self.active_session].append({"role": "user", "content": text_input})
         response = self._query_llm(self.sessions[self.active_session])
 
@@ -152,23 +184,13 @@ class GPT(yarp.RFModule):
             self.status = 'idle'
             return "[ERROR] Failed to get response."
 
-        full_reply = ""
-        try:
-            for chunk in response:
-                choices = chunk.choices
-                if not choices or len(choices) == 0:
-                    continue
-                delta = choices[0].delta
-                delta_content = getattr(delta, "content", None)
-                if delta_content:
-                    print(delta_content, end="", flush=True)
-                    full_reply += delta_content
+        full_reply = response.choices[0].message.content.strip()
+        print(full_reply)
 
-            print("\n")
-        except Exception as e:
-            print(f"[ERROR] Streaming failed: {e}")
-            self.status = 'idle'
-            return "[ERROR] Streaming failed."
+        out_bottle = self.output_port.prepare()
+        out_bottle.clear()
+        out_bottle.addString(full_reply)
+        self.output_port.write()
 
         self.sessions[self.active_session].append({"role": "assistant", "content": full_reply})
         self._save_sessions_to_file()
@@ -180,15 +202,12 @@ class GPT(yarp.RFModule):
 
         if cmd == 'status':
             reply.addString(self.status)
-
         elif cmd == 'reset':
             self.reset_active_session()
             reply.addString('Session reset.')
-
         elif cmd == 'quit':
             self.close()
             reply.addString('Quit command sent.')
-
         elif cmd == 'query':
             self.query_via_rpc = True
             text_input = " ".join(command.get(i).asString() for i in range(1, command.size())).strip()
@@ -196,40 +215,34 @@ class GPT(yarp.RFModule):
             answer = self.answer_ChatGPT(text_input)
             reply.addString(answer)
             self.query_via_rpc = False
-
         elif cmd == 'set_system_prompt':
             new_prompt = " ".join(command.get(i).asString() for i in range(1, command.size())).strip()
             self.system_prompt = new_prompt
             self.reset_active_session()
             reply.addString('System prompt updated.')
-
         elif cmd == 'create_session':
             session_id = command.get(1).asString()
             self._create_session(session_id)
             self._save_sessions_to_file()
             reply.addString(f"Session '{session_id}' created.")
-
         elif cmd == 'switch_session':
             session_id = command.get(1).asString()
             if session_id in self.sessions:
                 self.active_session = session_id
                 reply.addString(f"Switched to session '{session_id}'.")
             else:
-                reply.addString(f"Session '{session_id}' not found.")
-
+                reply.addString(f"[ERROR] Session '{session_id}' not found.")
         elif cmd == 'list_sessions':
             reply.addString(", ".join(self.sessions.keys()))
-
         elif cmd == 'set_model':
             model_name = command.get(1).asString()
             if model_name in self.deployments:
                 self.current_model = model_name
                 reply.addString(f"Model set to '{model_name}'.")
             else:
-                reply.addString(f"Unknown model '{model_name}'.")
-
+                reply.addString(f"[ERROR] Unknown model '{model_name}'.")
         else:
-            reply.addString('Unknown command.')
+            reply.addString(f"[ERROR] Unknown command '{cmd}'. Type 'help'.")
 
         return True
 
@@ -249,12 +262,14 @@ class GPT(yarp.RFModule):
         return self.period
 
     def close(self):
+        self.logs.info("[GPT] Closing ports...")
         self.input_port.close()
         self.output_port.close()
         self.rpc_port.close()
         return True
 
     def interruptModule(self):
+        self.logs.info("[GPT] Interrupting module...")
         self.input_port.interrupt()
         self.output_port.interrupt()
         self.rpc_port.interrupt()
@@ -263,9 +278,9 @@ class GPT(yarp.RFModule):
 
 if __name__ == '__main__':
     yarp.Network.init()
-    mod = GPT()
     rf = yarp.ResourceFinder()
     rf.setVerbose(True)
     rf.configure(sys.argv)
+    mod = GPT()
     mod.runModule(rf)
     yarp.Network.fini()
