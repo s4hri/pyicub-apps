@@ -42,6 +42,8 @@ from pyicub.core.logger import YarpLogger
 class GPT(yarp.RFModule):
 
     def configure(self, rf):
+        self.DEFAULT_SESSION = "default"
+
         self.logs = YarpLogger.getLogger()
         self.logs.info("[GPT] Starting configuration...")
 
@@ -74,7 +76,7 @@ class GPT(yarp.RFModule):
 
         self.sessions = {}
         self.token_usage = {}
-        self.active_session = "default"
+        self.active_session = self.DEFAULT_SESSION
         self._create_session(self.active_session)
 
         self._load_sessions_from_file()
@@ -83,8 +85,15 @@ class GPT(yarp.RFModule):
         self.query_via_rpc = False
         self.text_via_rpc = ""
 
+        # make the first API call here is necessary to establish the connection
+        self._model_warmup()
+
         self.logs.info("[GPT] Configuration complete.")
         return True
+
+    def _model_warmup(self):
+        messages = [{"role": "system", "content": self.system_prompt}, {"role": "user", "content": "Hi"}]
+        self._query_llm(messages)
 
     def _setup_ports(self):
         self.input_port = yarp.BufferedPortBottle()
@@ -193,7 +202,10 @@ class GPT(yarp.RFModule):
         self.output_port.write()
 
         self.sessions[self.active_session].append({"role": "assistant", "content": full_reply})
-        self._save_sessions_to_file()
+        
+        if not (self.active_session == self.DEFAULT_SESSION):
+            self._save_sessions_to_file()
+
         self.status = 'idle'
         return full_reply
 
