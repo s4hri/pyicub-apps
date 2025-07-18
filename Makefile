@@ -16,17 +16,10 @@ list:
 	@$(foreach app,$(APPS),echo "  - $(app)";)
 
 all: $(APPS)
-	@echo "Copying ./apps/applications to $(ICUB_APPS)..."
-	@if [ -d ./apps/applications ]; then \
-		mkdir -p "$(ICUB_APPS)"; \
-		cp -r ./apps/applications "$(ICUB_APPS)"; \
-		echo "✅ Copied applications to $(ICUB_APPS)"; \
-	else \
-		echo "⚠️  Warning: ./apps/applications directory not found."; \
-	fi
+
 
 $(APPS):
-	@echo "🔧 Installing $@..."
+	@echo "Installing $@..."
 
 	# Install Ubuntu packages
 	@if [ -f apps/$@/packages.apt ]; then \
@@ -40,7 +33,7 @@ $(APPS):
 		$(PY) -m pip install -r apps/$@/requirements.txt; \
 	fi
 
-	@echo "✅ $@ installed successfully!"
+	@echo "$@ installed successfully!"
 
 clean:
 	find . -type d -name '__pycache__' -exec rm -r {} +
