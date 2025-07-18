@@ -1,0 +1,45 @@
+<application>
+
+    <name>PyiCub Apps</name>
+
+	<module>
+        <name>yarpdev</name>
+        <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+        <parameters>--device opencv_grabber</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+
+    <module>
+        <name>python3</name>
+        <parameters>$ENV{ROBOT_CODE}/pyicub-apps/apps/FaceDetector/app.py</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+
+    <module>
+        <name>python3</name>
+        <parameters>$ENV{ROBOT_CODE}/pyicub-apps/apps/GPT/app.py --config $ENV{ROBOT_CODE}/pyicub-apps/apps/GPT/config/config.json --prompt_file $ENV{ROBOT_CODE}/pyicub-apps/apps/GPT/config/prompt.txt</parameters>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+
+    <module>
+        <name>python3</name>
+        <parameters>$ENV{ROBOT_CODE}/pyicub-apps/apps/VisualAttention/app.py --robot $ENV{ROBOT_NAME}</parameters>
+        <dependencies>
+              <port timeout="60.0">/iKinGazeCtrl/angles:o</port>
+        </dependencies>
+        <node>$ENV{ICUBSRV_HOST}</node>
+    </module>
+
+    <connection>
+        <from>/grabber</from>
+        <to>/iFaceDetector/image:i</to>
+        <protocol>udp</protocol>
+    </connection>
+
+    <connection>
+		<from>/GPT/text:o</from>
+		<to>/iSpeak</to>
+		<protocol>tcp</protocol>
+	</connection>
+
+</application>

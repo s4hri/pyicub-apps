@@ -12,8 +12,6 @@ class VisualAttentionModule(yarp.RFModule):
         super().__init__()
         self.period = 0.1
         self.logs = YarpLogger.getLogger()
-        self.gazectrl = GazeController('icubSim', self.logs)
-        self.attention = VisualAttention(self.gazectrl)
         self.cmd_port = yarp.Port()
         self.track_robot_xyz_port = yarp.BufferedPortBottle()
         self.track_camera_uv_port = yarp.BufferedPortBottle()
@@ -25,6 +23,9 @@ class VisualAttentionModule(yarp.RFModule):
     def configure(self, rf):
         self.logs.info("[%s] Configuring module..." % self.getName())
         self.period = rf.check("period") and rf.find("period").asFloat64() or 0.1
+        self.robot_name = rf.check("robot") and rf.find("robot").asString() or "icubSim"
+        self.gazectrl = GazeController(self.robot_name, self.logs)
+        self.attention = VisualAttention(self.gazectrl)
         self.gazectrl.init()
 
         self.cmd_port.open("/%s/cmd:rpc" % self.getName())
