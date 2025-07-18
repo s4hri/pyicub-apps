@@ -17,8 +17,9 @@ list:
 
 all: $(APPS)
 
+
 $(APPS):
-	@echo "🔧 Installing $@..."
+	@echo "Installing $@..."
 
 	# Install Ubuntu packages
 	@if [ -f apps/$@/packages.apt ]; then \
@@ -32,7 +33,7 @@ $(APPS):
 		$(PY) -m pip install -r apps/$@/requirements.txt; \
 	fi
 
-	@echo "✅ $@ installed successfully!"
+	@echo "$@ installed successfully!"
 
 clean:
 	find . -type d -name '__pycache__' -exec rm -r {} +

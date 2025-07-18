@@ -34,6 +34,7 @@ import yarp
 import sys
 import json
 import os
+import re
 from openai import AzureOpenAI
 from openai import APIConnectionError, RateLimitError, Timeout, APIError
 from pyicub.core.logger import YarpLogger
@@ -193,7 +194,9 @@ class GPT(yarp.RFModule):
             self.status = 'idle'
             return "[ERROR] Failed to get response."
 
-        full_reply = response.choices[0].message.content.strip()
+        raw_reply = response.choices[0].message.content.strip()
+        # Replace all whitespace characters (like \n, \t, etc.) with a single space
+        full_reply = re.sub(r'\s+', ' ', raw_reply)
         print(full_reply)
 
         out_bottle = self.output_port.prepare()
