@@ -68,7 +68,7 @@ class GPT(yarp.RFModule):
         try:
             self.client = AzureOpenAI(
                 azure_endpoint=self.config['endpoint'],
-                api_key=os.getenv("AZURE_API_KEY"),
+                api_key=self.config["AZURE_API_KEY"],
                 api_version=self.config['api_version']
             )
         except Exception as e:
