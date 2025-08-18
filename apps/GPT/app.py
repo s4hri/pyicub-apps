@@ -212,6 +212,22 @@ class GPT(yarp.RFModule):
         self.status = 'idle'
         return full_reply
 
+    def _set_system_prompt_from_file(self, abs_filepath):
+        if not os.path.isabs(abs_filepath):
+            return "[ERROR] filepath is not absolute!"
+        try:
+            sys_prompt = None
+            with open(abs_filepath, 'r') as f:
+                sys_prompt = f.read().strip()
+            return self._set_system_prompt(sys_prompt)
+        except Exception as e:
+            return f"[ERROR] Failed to load system prompt from {abs_filepath} file: {e}"
+        
+    def _set_system_prompt(self, system_prompt):
+        self.system_prompt = system_prompt
+        self.reset_active_session()
+        return 'System prompt updated.'
+
     def respond(self, command, reply):
         cmd = command.get(0).asString()
 
@@ -232,9 +248,12 @@ class GPT(yarp.RFModule):
             self.query_via_rpc = False
         elif cmd == 'set_system_prompt':
             new_prompt = " ".join(command.get(i).asString() for i in range(1, command.size())).strip()
-            self.system_prompt = new_prompt
-            self.reset_active_session()
-            reply.addString('System prompt updated.')
+            res = self._set_system_prompt(new_prompt)
+            reply.addString(res)
+        elif cmd == "set_system_prompt_from_file":
+            abs_filepath = command.get(1).asString()
+            res = self._set_system_prompt_from_file(abs_filepath)
+            reply.addString(res)
         elif cmd == 'create_session':
             session_id = command.get(1).asString()
             self._create_session(session_id)
