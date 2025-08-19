@@ -93,7 +93,8 @@ class GPT(yarp.RFModule):
         return True
 
     def _model_warmup(self):
-        messages = [{"role": "system", "content": self.system_prompt}, {"role": "user", "content": "Hi"}]
+        warmup_system_prompt = "You are an assistant"
+        messages = [{"role": "system", "content": warmup_system_prompt}, {"role": "user", "content": "Hi"}]
         self._query_llm(messages)
 
     def _setup_ports(self):
