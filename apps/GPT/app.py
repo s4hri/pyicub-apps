@@ -166,6 +166,51 @@ class GPT(yarp.RFModule):
         except Exception as e:
             self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
 
+
+    def _markdown_to_text(self, markdown: str) -> str:
+        """
+        Convert Markdown text to plain text by stripping common Markdown syntax.
+        """
+
+        text = markdown
+
+        # # Remove code blocks (```...```)
+        # text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+        # # Remove inline code (`...`)
+        # text = re.sub(r"`([^`]*)`", r"\1", text)
+
+        # # Remove images ![alt](url)
+        # text = re.sub(r"!\[.*?\]\(.*?\)", "", text)
+
+        # # Replace links [text](url) with just text
+        # text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+
+        # Remove emphasis **bold**, *italic*
+        text = re.sub(r"(\*\*|__)(.*?)\1", r"\2", text)
+        text = re.sub(r"(\*|_)(.*?)\1", r"\2", text)
+
+        # # Remove headers #### Header → Header
+        # text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+
+        # # Remove blockquotes
+        # text = re.sub(r"^>\s?", "", text, flags=re.MULTILINE)
+
+        # Remove unordered list markers (-, *, +)
+        text = re.sub(r"^\s*[-*+]\s+", "", text, flags=re.MULTILINE)
+
+        # Remove ordered list markers (1., 2., etc.)
+        text = re.sub(r"^\s*\d+\.\s+", "", text, flags=re.MULTILINE)
+
+        # Remove horizontal rules (---, ***, etc.)
+        text = re.sub(r"^[-*_]{3,}$", "", text, flags=re.MULTILINE)
+
+        # Collapse multiple newlines
+        text = re.sub(r"\n{2,}", "\n\n", text)
+
+        return text.strip()
+
+
     def _query_llm(self, messages):
         try:
             response = self.client.chat.completions.create(
@@ -196,8 +241,11 @@ class GPT(yarp.RFModule):
             return "[ERROR] Failed to get response."
 
         raw_reply = response.choices[0].message.content.strip()
+
         # Replace all whitespace characters (like \n, \t, etc.) with a single space
         full_reply = re.sub(r'\s+', ' ', raw_reply)
+        full_reply = self._markdown_to_text(full_reply)
+        full_reply = full_reply.replace('"', "") # speech has a bug, it does not work with hi" for instance.
         print(full_reply)
 
         out_bottle = self.output_port.prepare()
