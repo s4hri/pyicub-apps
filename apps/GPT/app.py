@@ -161,7 +161,7 @@ class GPT(yarp.RFModule):
 
     def save_session_to_file(self, session_id):
         try:
-            filename = f"{self.session_id}.json"
+            filename = f"{session_id}.json"
             filepath = os.path.join(self.sessions_folder, filename)
             data = {
                 "session": self.sessions[session_id], 
