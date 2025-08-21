@@ -232,10 +232,10 @@ class GPT(yarp.RFModule):
         # text = re.sub(r"^>\s?", "", text, flags=re.MULTILINE)
 
         # Remove unordered list markers (-, *, +)
-        text = re.sub(r"^\s*[-*+]\s+", "", text, flags=re.MULTILINE)
+        text = re.sub(r"^\s*[-*+]\s+", ".", text, flags=re.MULTILINE)
 
         # Remove ordered list markers (1., 2., etc.)
-        text = re.sub(r"^\s*\d+\.\s+", "", text, flags=re.MULTILINE)
+        text = re.sub(r"^\s*\d+\.\s+", ".", text, flags=re.MULTILINE)
 
         # Remove horizontal rules (---, ***, etc.)
         text = re.sub(r"^[-*_]{3,}$", "", text, flags=re.MULTILINE)
