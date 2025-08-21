@@ -171,6 +171,7 @@ class GPT(yarp.RFModule):
             }
             with open(filepath, 'w') as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
+            self.logs.info(f"[GPT] Session {session_id=} saved in {filepath}")
         except Exception as e:
             self.logs.error(f"[GPT] Failed to save session {session_id=}: {e}")
 
