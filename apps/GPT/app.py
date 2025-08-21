@@ -49,7 +49,16 @@ class GPT(yarp.RFModule):
         self.logs.info("[GPT] Starting configuration...")
 
         self.period = 0.1
-        self.sessions_file = "sessions.json"
+
+        #self.sessions_file = "sessions.json"
+        
+        self.sessions_folder = rf.check("sessions_folder", yarp.Value("")).asString()
+        if not self.sessions_folder:
+            self.logs.error("[GPT] Missing sessions_folder path")
+            return False
+        if not (os.path.isdir(self.sessions_folder)):
+            os.makedirs(self.sessions_folder)
+
         self.total_tokens_used = 0
 
         self._setup_ports()
@@ -77,10 +86,14 @@ class GPT(yarp.RFModule):
 
         self.sessions = {}
         self.token_usage = {}
-        self.active_session = self.DEFAULT_SESSION
-        self._create_session(self.active_session)
 
-        self._load_sessions_from_file()
+        self.active_session = self.DEFAULT_SESSION
+
+        self._create_session(self.active_session)
+        if not (self.active_session == self.DEFAULT_SESSION):
+            self.save_active_session_to_file()
+
+        #self._load_sessions_from_file()
 
         self.status = 'idle'
         self.query_via_rpc = False
@@ -145,26 +158,45 @@ class GPT(yarp.RFModule):
     def reset_active_session(self):
         self._reset_session(self.active_session)
 
-    def _save_sessions_to_file(self):
-        try:
-            data = {"sessions": self.sessions, "token_usage": self.token_usage}
-            with open(self.sessions_file, 'w') as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            self.logs.error(f"[GPT] Failed to save sessions: {e}")
 
-    def _load_sessions_from_file(self):
-        if not os.path.isfile(self.sessions_file):
-            return
+    def save_session_to_file(self, session_id):
         try:
-            with open(self.sessions_file, 'r') as f:
-                data = json.load(f)
-                self.sessions = data.get("sessions", {})
-                self.token_usage = data.get("token_usage", {})
-            if self.active_session not in self.sessions:
-                self._create_session(self.active_session)
+            filename = f"{self.session_id}.json"
+            filepath = os.path.join(self.sessions_folder, filename)
+            data = {
+                "session": self.sessions[session_id], 
+                "token_usage": self.token_usage[session_id]
+            }
+            with open(filepath, 'w') as f:
+                json.dump(data, f, indent=4)
         except Exception as e:
-            self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
+            self.logs.error(f"[GPT] Failed to save session {session_id=}: {e}")
+
+    def save_active_session_to_file(self):
+        return self.save_session_to_file(self.active_session)
+        
+
+
+    # def _save_sessions_to_file(self):
+    #     try:
+    #         data = {"sessions": self.sessions, "token_usage": self.token_usage}
+    #         with open(self.sessions_file, 'w') as f:
+    #             json.dump(data, f, indent=2)
+    #     except Exception as e:
+    #         self.logs.error(f"[GPT] Failed to save sessions: {e}")
+
+    # def _load_sessions_from_file(self):
+    #     if not os.path.isfile(self.sessions_file):
+    #         return
+    #     try:
+    #         with open(self.sessions_file, 'r') as f:
+    #             data = json.load(f)
+    #             self.sessions = data.get("sessions", {})
+    #             self.token_usage = data.get("token_usage", {})
+    #         if self.active_session not in self.sessions:
+    #             self._create_session(self.active_session)
+    #     except Exception as e:
+    #         self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
 
 
     def _markdown_to_text(self, markdown: str) -> str:
@@ -256,15 +288,17 @@ class GPT(yarp.RFModule):
         self.sessions[self.active_session].append({"role": "assistant", "content": full_reply})
         
         if not (self.active_session == self.DEFAULT_SESSION):
-            self._save_sessions_to_file()
+            self.save_active_session_to_file()
+            #self._save_sessions_to_file()
 
         self.status = 'idle'
         return full_reply
 
     def _set_system_prompt_from_file(self, abs_filepath):
-        if not os.path.isabs(abs_filepath):
-            return "[ERROR] filepath is not absolute!"
         try:
+            if not os.path.isabs(abs_filepath):
+                return "[ERROR] filepath is not absolute!"
+            
             sys_prompt = None
             with open(abs_filepath, 'r') as f:
                 sys_prompt = f.read().strip()
@@ -306,7 +340,7 @@ class GPT(yarp.RFModule):
         elif cmd == 'create_session':
             session_id = command.get(1).asString()
             self._create_session(session_id)
-            self._save_sessions_to_file()
+            self.save_session_to_file(session_id)
             reply.addString(f"Session '{session_id}' created.")
         elif cmd == 'switch_session':
             session_id = command.get(1).asString()
