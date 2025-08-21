@@ -59,6 +59,8 @@ class GPT(yarp.RFModule):
         if not (os.path.isdir(self.sessions_folder)):
             os.makedirs(self.sessions_folder)
 
+        self.pending_changes = False
+
         self.total_tokens_used = 0
 
         self._setup_ports()
@@ -288,9 +290,7 @@ class GPT(yarp.RFModule):
 
         self.sessions[self.active_session].append({"role": "assistant", "content": full_reply})
         
-        if not (self.active_session == self.DEFAULT_SESSION):
-            self.save_active_session_to_file()
-            #self._save_sessions_to_file()
+        self.pending_changes = True
 
         self.status = 'idle'
         return full_reply
@@ -365,6 +365,11 @@ class GPT(yarp.RFModule):
         return True
 
     def updateModule(self):
+        if self.pending_changes:
+            self.pending_changes = False
+            if not (self.active_session == self.DEFAULT_SESSION):
+                self.save_active_session_to_file()
+
         if not self.query_via_rpc:
             bottle = self.input_port.read(False)
             if bottle is not None:
