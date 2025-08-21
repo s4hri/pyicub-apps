@@ -168,7 +168,7 @@ class GPT(yarp.RFModule):
                 "token_usage": self.token_usage[session_id]
             }
             with open(filepath, 'w') as f:
-                json.dump(data, f, indent=4)
+                json.dump(data, f, indent=4, ensure_ascii=False)
         except Exception as e:
             self.logs.error(f"[GPT] Failed to save session {session_id=}: {e}")
 
@@ -274,9 +274,10 @@ class GPT(yarp.RFModule):
 
         raw_reply = response.choices[0].message.content.strip()
 
+
+        full_reply = self._markdown_to_text(raw_reply)
         # Replace all whitespace characters (like \n, \t, etc.) with a single space
-        full_reply = re.sub(r'\s+', ' ', raw_reply)
-        full_reply = self._markdown_to_text(full_reply)
+        full_reply = re.sub(r'\s+', ' ', full_reply)
         full_reply = full_reply.replace('"', "") # speech has a bug, it does not work with hi" for instance.
         print(full_reply)
 
