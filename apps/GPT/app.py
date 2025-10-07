@@ -49,7 +49,18 @@ class GPT(yarp.RFModule):
         self.logs.info("[GPT] Starting configuration...")
 
         self.period = 0.1
-        self.sessions_file = "sessions.json"
+
+        #self.sessions_file = "sessions.json"
+        
+        self.sessions_folder = rf.check("sessions_folder", yarp.Value("")).asString()
+        if not self.sessions_folder:
+            self.logs.error("[GPT] Missing sessions_folder path")
+            return False
+        if not (os.path.isdir(self.sessions_folder)):
+            os.makedirs(self.sessions_folder)
+
+        self.pending_changes = False
+
         self.total_tokens_used = 0
 
         self._setup_ports()
@@ -68,7 +79,7 @@ class GPT(yarp.RFModule):
         try:
             self.client = AzureOpenAI(
                 azure_endpoint=self.config['endpoint'],
-                api_key=os.getenv("AZURE_API_KEY"),
+                api_key=self.config["AZURE_API_KEY"],
                 api_version=self.config['api_version']
             )
         except Exception as e:
@@ -77,10 +88,14 @@ class GPT(yarp.RFModule):
 
         self.sessions = {}
         self.token_usage = {}
-        self.active_session = self.DEFAULT_SESSION
-        self._create_session(self.active_session)
 
-        self._load_sessions_from_file()
+        self.active_session = self.DEFAULT_SESSION
+
+        self._create_session(self.active_session)
+        if not (self.active_session == self.DEFAULT_SESSION):
+            self.save_active_session_to_file()
+
+        #self._load_sessions_from_file()
 
         self.status = 'idle'
         self.query_via_rpc = False
@@ -93,7 +108,8 @@ class GPT(yarp.RFModule):
         return True
 
     def _model_warmup(self):
-        messages = [{"role": "system", "content": self.system_prompt}, {"role": "user", "content": "Hi"}]
+        warmup_system_prompt = "You are an assistant"
+        messages = [{"role": "system", "content": warmup_system_prompt}, {"role": "user", "content": "Hi"}]
         self._query_llm(messages)
 
     def _setup_ports(self):
@@ -144,26 +160,91 @@ class GPT(yarp.RFModule):
     def reset_active_session(self):
         self._reset_session(self.active_session)
 
-    def _save_sessions_to_file(self):
-        try:
-            data = {"sessions": self.sessions, "token_usage": self.token_usage}
-            with open(self.sessions_file, 'w') as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            self.logs.error(f"[GPT] Failed to save sessions: {e}")
 
-    def _load_sessions_from_file(self):
-        if not os.path.isfile(self.sessions_file):
-            return
+    def save_session_to_file(self, session_id):
         try:
-            with open(self.sessions_file, 'r') as f:
-                data = json.load(f)
-                self.sessions = data.get("sessions", {})
-                self.token_usage = data.get("token_usage", {})
-            if self.active_session not in self.sessions:
-                self._create_session(self.active_session)
+            filename = f"{session_id}.json"
+            filepath = os.path.join(self.sessions_folder, filename)
+            data = {
+                "session": self.sessions[session_id], 
+                "token_usage": self.token_usage[session_id]
+            }
+            with open(filepath, 'w') as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+            self.logs.info(f"[GPT] Session {session_id=} saved in {filepath}")
         except Exception as e:
-            self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
+            self.logs.error(f"[GPT] Failed to save session {session_id=}: {e}")
+
+    def save_active_session_to_file(self):
+        return self.save_session_to_file(self.active_session)
+        
+
+
+    # def _save_sessions_to_file(self):
+    #     try:
+    #         data = {"sessions": self.sessions, "token_usage": self.token_usage}
+    #         with open(self.sessions_file, 'w') as f:
+    #             json.dump(data, f, indent=2)
+    #     except Exception as e:
+    #         self.logs.error(f"[GPT] Failed to save sessions: {e}")
+
+    # def _load_sessions_from_file(self):
+    #     if not os.path.isfile(self.sessions_file):
+    #         return
+    #     try:
+    #         with open(self.sessions_file, 'r') as f:
+    #             data = json.load(f)
+    #             self.sessions = data.get("sessions", {})
+    #             self.token_usage = data.get("token_usage", {})
+    #         if self.active_session not in self.sessions:
+    #             self._create_session(self.active_session)
+    #     except Exception as e:
+    #         self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
+
+
+    def _markdown_to_text(self, markdown: str) -> str:
+        """
+        Convert Markdown text to plain text by stripping common Markdown syntax.
+        """
+
+        text = markdown
+
+        # # Remove code blocks (```...```)
+        # text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+        # # Remove inline code (`...`)
+        # text = re.sub(r"`([^`]*)`", r"\1", text)
+
+        # # Remove images ![alt](url)
+        # text = re.sub(r"!\[.*?\]\(.*?\)", "", text)
+
+        # # Replace links [text](url) with just text
+        # text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+
+        # Remove emphasis **bold**, *italic*
+        text = re.sub(r"(\*\*|__)(.*?)\1", r"\2", text)
+        text = re.sub(r"(\*|_)(.*?)\1", r"\2", text)
+
+        # # Remove headers #### Header → Header
+        # text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+
+        # # Remove blockquotes
+        # text = re.sub(r"^>\s?", "", text, flags=re.MULTILINE)
+
+        # Remove unordered list markers (-, *, +)
+        text = re.sub(r"^\s*[-*+]\s+", ".", text, flags=re.MULTILINE)
+
+        # Remove ordered list markers (1., 2., etc.)
+        text = re.sub(r"^\s*\d+\.\s+", ".", text, flags=re.MULTILINE)
+
+        # Remove horizontal rules (---, ***, etc.)
+        text = re.sub(r"^[-*_]{3,}$", "", text, flags=re.MULTILINE)
+
+        # Collapse multiple newlines
+        text = re.sub(r"\n{2,}", "\n\n", text)
+
+        return text.strip()
+
 
     def _query_llm(self, messages):
         try:
@@ -195,8 +276,12 @@ class GPT(yarp.RFModule):
             return "[ERROR] Failed to get response."
 
         raw_reply = response.choices[0].message.content.strip()
+
+
+        full_reply = self._markdown_to_text(raw_reply)
         # Replace all whitespace characters (like \n, \t, etc.) with a single space
-        full_reply = re.sub(r'\s+', ' ', raw_reply)
+        full_reply = re.sub(r'\s+', ' ', full_reply)
+        full_reply = full_reply.replace('"', "") # speech has a bug, it does not work with hi" for instance.
         print(full_reply)
 
         out_bottle = self.output_port.prepare()
@@ -206,11 +291,27 @@ class GPT(yarp.RFModule):
 
         self.sessions[self.active_session].append({"role": "assistant", "content": full_reply})
         
-        if not (self.active_session == self.DEFAULT_SESSION):
-            self._save_sessions_to_file()
+        self.pending_changes = True
 
         self.status = 'idle'
         return full_reply
+
+    def _set_system_prompt_from_file(self, abs_filepath):
+        try:
+            if not os.path.isabs(abs_filepath):
+                return "[ERROR] filepath is not absolute!"
+            
+            sys_prompt = None
+            with open(abs_filepath, 'r') as f:
+                sys_prompt = f.read().strip()
+            return self._set_system_prompt(sys_prompt)
+        except Exception as e:
+            return f"[ERROR] Failed to load system prompt from {abs_filepath} file: {e}"
+        
+    def _set_system_prompt(self, system_prompt):
+        self.system_prompt = system_prompt
+        self.reset_active_session()
+        return 'System prompt updated.'
 
     def respond(self, command, reply):
         cmd = command.get(0).asString()
@@ -232,13 +333,16 @@ class GPT(yarp.RFModule):
             self.query_via_rpc = False
         elif cmd == 'set_system_prompt':
             new_prompt = " ".join(command.get(i).asString() for i in range(1, command.size())).strip()
-            self.system_prompt = new_prompt
-            self.reset_active_session()
-            reply.addString('System prompt updated.')
+            res = self._set_system_prompt(new_prompt)
+            reply.addString(res)
+        elif cmd == "set_system_prompt_from_file":
+            abs_filepath = command.get(1).asString()
+            res = self._set_system_prompt_from_file(abs_filepath)
+            reply.addString(res)
         elif cmd == 'create_session':
             session_id = command.get(1).asString()
             self._create_session(session_id)
-            self._save_sessions_to_file()
+            self.save_session_to_file(session_id)
             reply.addString(f"Session '{session_id}' created.")
         elif cmd == 'switch_session':
             session_id = command.get(1).asString()
@@ -262,6 +366,11 @@ class GPT(yarp.RFModule):
         return True
 
     def updateModule(self):
+        if self.pending_changes:
+            self.pending_changes = False
+            if not (self.active_session == self.DEFAULT_SESSION):
+                self.save_active_session_to_file()
+
         if not self.query_via_rpc:
             bottle = self.input_port.read(False)
             if bottle is not None:
