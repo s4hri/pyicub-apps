@@ -254,9 +254,10 @@ class GPT(yarp.RFModule):
             # to remove
             self.idx_bomb += 1
             if self.idx_bomb == 2:
+                print("Bomb!!!", flush=True)
                 raise Exception("Bomb")
             ###################
-            
+
             response = self.client.chat.completions.create(
                 model=self.deployments[self.current_model],
                 temperature=self.temperature,
