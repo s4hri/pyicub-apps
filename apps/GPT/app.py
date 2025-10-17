@@ -43,6 +43,9 @@ from pyicub.core.logger import YarpLogger
 class GPT(yarp.RFModule):
 
     def configure(self, rf):
+        # to remove
+        self.idx_bomb = 0 
+
         self.DEFAULT_SESSION = "default"
 
         self.logs = YarpLogger.getLogger()
@@ -248,6 +251,12 @@ class GPT(yarp.RFModule):
 
     def _query_llm(self, messages):
         try:
+            # to remove
+            self.idx_bomb += 1
+            if self.idx_bomb == 2:
+                raise Exception("Bomb")
+            ###################
+            
             response = self.client.chat.completions.create(
                 model=self.deployments[self.current_model],
                 temperature=self.temperature,
