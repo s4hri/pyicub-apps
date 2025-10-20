@@ -43,9 +43,6 @@ from pyicub.core.logger import YarpLogger
 class GPT(yarp.RFModule):
 
     def configure(self, rf):
-        # to remove
-        self.idx_bomb = 0 
-
         self.DEFAULT_SESSION = "default"
 
         self.logs = YarpLogger.getLogger()
@@ -183,28 +180,6 @@ class GPT(yarp.RFModule):
         
 
 
-    # def _save_sessions_to_file(self):
-    #     try:
-    #         data = {"sessions": self.sessions, "token_usage": self.token_usage}
-    #         with open(self.sessions_file, 'w') as f:
-    #             json.dump(data, f, indent=2)
-    #     except Exception as e:
-    #         self.logs.error(f"[GPT] Failed to save sessions: {e}")
-
-    # def _load_sessions_from_file(self):
-    #     if not os.path.isfile(self.sessions_file):
-    #         return
-    #     try:
-    #         with open(self.sessions_file, 'r') as f:
-    #             data = json.load(f)
-    #             self.sessions = data.get("sessions", {})
-    #             self.token_usage = data.get("token_usage", {})
-    #         if self.active_session not in self.sessions:
-    #             self._create_session(self.active_session)
-    #     except Exception as e:
-    #         self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
-
-
     def _markdown_to_text(self, markdown: str) -> str:
         """
         Convert Markdown text to plain text by stripping common Markdown syntax.
@@ -251,13 +226,6 @@ class GPT(yarp.RFModule):
 
     def _query_llm(self, messages):
         try:
-            # to remove
-            self.idx_bomb += 1
-            if self.idx_bomb == 2:
-                print("Bomb!!!", flush=True)
-                raise Exception("Bomb")
-            ###################
-
             response = self.client.chat.completions.create(
                 model=self.deployments[self.current_model],
                 temperature=self.temperature,
@@ -268,7 +236,7 @@ class GPT(yarp.RFModule):
                 stream=False
             )
             return response
-        except (APIConnectionError, Timeout, RateLimitError, APIError) as e:
+        except Exception as e:
             self.logs.error(f"[GPT] API request failed: {e}")
             return None
 
@@ -283,7 +251,7 @@ class GPT(yarp.RFModule):
 
         if response is None:
             self.status = 'idle'
-            return "[ERROR] Failed to get response."
+            return "[ERROR] Failed to get response. Please try again."
 
         raw_reply = response.choices[0].message.content.strip()
 
@@ -418,3 +386,4 @@ if __name__ == '__main__':
     mod = GPT()
     mod.runModule(rf)
     yarp.Network.fini()
+
