@@ -236,8 +236,20 @@ class GPT(yarp.RFModule):
                 stream=False
             )
             return response
+        except RateLimitError as e:
+            self.logs.error(f"[GPT] Rate limit exceeded: {e}. Please wait and try again.")
+            return None
+        except APIConnectionError as e:
+            self.logs.error(f"[GPT] API connection error: {e}. Please check your network connection.")
+            return None
+        except Timeout as e:
+            self.logs.error(f"[GPT] Request timed out: {e}.")
+            return None
+        except APIError as e:
+            self.logs.error(f"[GPT] API error: {e}.")
+            return None
         except Exception as e:
-            self.logs.error(f"[GPT] API request failed: {e}")
+            self.logs.error(f"[GPT] Unexpected error during API request: {e}")
             return None
 
     def answer_ChatGPT(self, text_input):
