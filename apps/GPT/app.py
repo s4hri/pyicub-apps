@@ -180,28 +180,6 @@ class GPT(yarp.RFModule):
         
 
 
-    # def _save_sessions_to_file(self):
-    #     try:
-    #         data = {"sessions": self.sessions, "token_usage": self.token_usage}
-    #         with open(self.sessions_file, 'w') as f:
-    #             json.dump(data, f, indent=2)
-    #     except Exception as e:
-    #         self.logs.error(f"[GPT] Failed to save sessions: {e}")
-
-    # def _load_sessions_from_file(self):
-    #     if not os.path.isfile(self.sessions_file):
-    #         return
-    #     try:
-    #         with open(self.sessions_file, 'r') as f:
-    #             data = json.load(f)
-    #             self.sessions = data.get("sessions", {})
-    #             self.token_usage = data.get("token_usage", {})
-    #         if self.active_session not in self.sessions:
-    #             self._create_session(self.active_session)
-    #     except Exception as e:
-    #         self.logs.warning(f"[GPT] Failed to load sessions file: {e}")
-
-
     def _markdown_to_text(self, markdown: str) -> str:
         """
         Convert Markdown text to plain text by stripping common Markdown syntax.
@@ -258,8 +236,20 @@ class GPT(yarp.RFModule):
                 stream=False
             )
             return response
-        except (APIConnectionError, Timeout, RateLimitError, APIError) as e:
-            self.logs.error(f"[GPT] API request failed: {e}")
+        except RateLimitError as e:
+            self.logs.error(f"[GPT] Rate limit exceeded: {e}. Please wait and try again.")
+            return None
+        except APIConnectionError as e:
+            self.logs.error(f"[GPT] API connection error: {e}. Please check your network connection.")
+            return None
+        except Timeout as e:
+            self.logs.error(f"[GPT] Request timed out: {e}.")
+            return None
+        except APIError as e:
+            self.logs.error(f"[GPT] API error: {e}.")
+            return None
+        except Exception as e:
+            self.logs.error(f"[GPT] Unexpected error during API request: {e}")
             return None
 
     def answer_ChatGPT(self, text_input):
@@ -273,7 +263,7 @@ class GPT(yarp.RFModule):
 
         if response is None:
             self.status = 'idle'
-            return "[ERROR] Failed to get response."
+            return "[ERROR] Failed to get response. Please try again."
 
         raw_reply = response.choices[0].message.content.strip()
 
@@ -408,3 +398,4 @@ if __name__ == '__main__':
     mod = GPT()
     mod.runModule(rf)
     yarp.Network.fini()
+
